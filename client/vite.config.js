@@ -9,6 +9,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      includeAssets: ['index.html'],
       manifest: {
         name: 'Savoré Recipes',
         short_name: 'Savoré',
@@ -22,6 +23,7 @@ export default defineConfig({
         ]
       },
       workbox: {
+        navigateFallback: '/',
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/localhost:3001\/api\/.*$/,
@@ -32,7 +34,15 @@ export default defineConfig({
             urlPattern: /\/assets\/.*\.(js|css|png|svg)$/,
             handler: 'CacheFirst',
             options: { cacheName: 'asset-cache' }
-          }
+          },
+          {
+            urlPattern: /^https:\/\/localhost:3001\/api\/recipes\/.*$/,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'recipes-api-cache',
+              expiration: { maxEntries: 50, maxAgeSeconds: 86400}
+            }
+          },
         ]
       }
     })
