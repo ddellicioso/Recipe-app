@@ -15,18 +15,16 @@ db.serialize(() => {
     password TEXT
   )`);
 
-  db.run(`CREATE TABLE IF NOT EXISTS recipes (
+  db.run(`
+  CREATE TABLE IF NOT EXISTS recipes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    userId INTEGER,
-    name TEXT,
-    category TEXT,
-    duration TEXT,
-    servings INTEGER,
-    calories INTEGER,
-    ingredients TEXT,
-    steps TEXT,
-    FOREIGN KEY (userId) REFERENCES users(id)
-  )`);
+    title TEXT NOT NULL,
+    ingredients TEXT NOT NULL,
+    instructions TEXT NOT NULL,
+    user_id INTEGER NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  )
+`);
 });
 
 export default db;
