@@ -49,8 +49,8 @@ const AddRecipePage = () => {
       duration: form.duration,
       servings: form.servings,
       calories: form.calories,
-      ingredients,
-      steps,
+      ingredients: ingredients.join(', '),
+      instructions: steps.join('\n'),
     };
 
     try {
@@ -64,79 +64,107 @@ const AddRecipePage = () => {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
-      setMessage("Recipe added!");
-      // Optionally clear form
+      setMessage("Recipe added! 🎉");
+      // Optionally clear form here
     } catch (err) {
       setMessage(err.message);
     }
   };
 
   return (
-    <div style={{
-      background: "#424a6e",
-      color: "white",
-      padding: "2rem",
-      borderRadius: "20px",
-      maxWidth: 400,
-      margin: "2rem auto",
-      fontFamily: "Nunito, sans-serif"
-    }}>
-      <a href="#" style={{ color: "#ffb7c5" }}>&lt; cancel</a>
-      <h2 style={{ textAlign: "center", marginBottom: "1rem", fontWeight: "700", fontSize: "2rem" }}>Savoré</h2>
-      <form onSubmit={handleSubmit}>
-        <label>food name</label>
-        <input name="foodName" value={form.foodName} onChange={handleChange} style={{ width: "100%", marginBottom: 10 }} />
-
-        <label>category</label>
-        <select name="category" value={form.category} onChange={handleChange} style={{ width: "100%", marginBottom: 10 }}>
-          {CATEGORIES.map((cat) => (
-            <option key={cat} value={cat}>{cat}</option>
-          ))}
-        </select>
-
-        <label>duration</label>
-        <input name="duration" value={form.duration} onChange={handleChange} style={{ width: "100%", marginBottom: 10 }} />
-
-        <label>servings</label>
-        <input name="servings" value={form.servings} onChange={handleChange} style={{ width: "100%", marginBottom: 10 }} />
-
-        <label>calories</label>
-        <input name="calories" value={form.calories} onChange={handleChange} style={{ width: "100%", marginBottom: 10 }} />
-
-        <label>ingredients</label>
-        <div style={{ display: "flex", marginBottom: 10 }}>
+    <div className="bg-navy text-pastelPink p-8 rounded-3xl max-w-md mx-auto mt-8 font-nunito shadow-lg relative">
+      <a href="#" className="absolute left-8 top-8 text-pastelPink underline hover:text-pastelAccent text-sm">&lt; cancel</a>
+      <h2 className="text-center mb-4 font-extrabold text-3xl tracking-tight text-pastelPink">Savoré</h2>
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <div>
+          <label className="block mb-1">food name</label>
           <input
-            name="ingredientInput"
-            value={form.ingredientInput}
+            name="foodName"
+            value={form.foodName}
             onChange={handleChange}
-            style={{ flex: 1 }}
-            placeholder="Type ingredient"
+            className="w-full rounded-md p-2 bg-pastelAccent text-navy mb-1 focus:outline-none"
           />
-          <button type="button" onClick={addIngredient} style={{ marginLeft: 5, background: "#ffb7c5" }}>+ add</button>
         </div>
-        <ul>
-          {ingredients.map((ing, i) => <li key={i}>{ing}</li>)}
-        </ul>
-
-        <label>step by step</label>
-        <div style={{ display: "flex", marginBottom: 10 }}>
-          <input
-            name="stepInput"
-            value={form.stepInput}
+        <div>
+          <label className="block mb-1">category</label>
+          <select
+            name="category"
+            value={form.category}
             onChange={handleChange}
-            style={{ flex: 1 }}
-            placeholder="Type step"
-          />
-          <button type="button" onClick={addStep} style={{ marginLeft: 5, background: "#ffb7c5" }}>+ add</button>
+            className="w-full rounded-md p-2 bg-pastelAccent text-navy mb-1 focus:outline-none"
+          >
+            {CATEGORIES.map((cat) => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
         </div>
-        <ol>
-          {steps.map((step, i) => <li key={i}>{step}</li>)}
-        </ol>
-
-        <button type="submit" style={{ marginTop: 20, background: "#fefeaa", color: "#424a6e", border: "none", padding: "10px 30px", borderRadius: "8px" }}>add recipe</button>
+        <div className="flex gap-3">
+          <div className="flex-1">
+            <label className="block mb-1">duration</label>
+            <input name="duration" value={form.duration} onChange={handleChange}
+              className="w-full rounded-md p-2 bg-pastelAccent text-navy mb-1 focus:outline-none"
+              placeholder="e.g. 30 min"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="block mb-1">servings</label>
+            <input name="servings" value={form.servings} onChange={handleChange}
+              className="w-full rounded-md p-2 bg-pastelAccent text-navy mb-1 focus:outline-none"
+              placeholder="e.g. 2"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="block mb-1">calories</label>
+            <input name="calories" value={form.calories} onChange={handleChange}
+              className="w-full rounded-md p-2 bg-pastelAccent text-navy mb-1 focus:outline-none"
+              placeholder="e.g. 350"
+            />
+          </div>
+        </div>
+        <div>
+          <label className="block mb-1">ingredients</label>
+          <div className="flex mb-1">
+            <input
+              name="ingredientInput"
+              value={form.ingredientInput}
+              onChange={handleChange}
+              className="flex-1 rounded-md p-2 bg-pastelAccent text-navy focus:outline-none"
+              placeholder="Type ingredient"
+            />
+            <button type="button" onClick={addIngredient}
+              className="ml-2 px-3 py-1 rounded-lg bg-pastelPink text-navy hover:bg-pastelAccent transition"
+            >+ add</button>
+          </div>
+          <ul className="list-disc list-inside text-xs text-pastelYellow">
+            {ingredients.map((ing, i) => <li key={i}>{ing}</li>)}
+          </ul>
+        </div>
+        <div>
+          <label className="block mb-1">step by step</label>
+          <div className="flex mb-1">
+            <input
+              name="stepInput"
+              value={form.stepInput}
+              onChange={handleChange}
+              className="flex-1 rounded-md p-2 bg-pastelAccent text-navy focus:outline-none"
+              placeholder="Type step"
+            />
+            <button type="button" onClick={addStep}
+              className="ml-2 px-3 py-1 rounded-lg bg-pastelPink text-navy hover:bg-pastelAccent transition"
+            >+ add</button>
+          </div>
+          <ol className="list-decimal list-inside text-xs text-pastelYellow">
+            {steps.map((step, i) => <li key={i}>{step}</li>)}
+          </ol>
+        </div>
+        <button type="submit"
+          className="mt-2 w-full py-2 rounded-lg bg-pastelYellow text-navy font-bold shadow hover:bg-pastelPink transition"
+        >
+          add recipe
+        </button>
       </form>
-      <div style={{ color: "#fffaa0", marginTop: 10 }}>{message}</div>
-      <footer style={{ fontSize: 12, color: "#ddd", marginTop: 40, textAlign: "center" }}>
+      <div className="text-pastelYellow mt-3">{message}</div>
+      <footer className="text-xs text-pastelYellow mt-8 text-center opacity-70">
         © 2025 Adeline Agna. All rights reserved.
       </footer>
     </div>
