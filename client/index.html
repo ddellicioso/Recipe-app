@@ -1,10 +1,30 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + React</title>
+    <title>Savoré</title>
+    <!-- 1) Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 2) Inline your custom colors -->
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              navy:        '#394761',
+              pastelPink:  '#FFB8D6',
+              pastelYellow:'#FFF9BA',
+              pastelAccent:'#FFE7EF'
+            },
+            fontFamily: {
+              nunito: ['Nunito', 'sans-serif']
+            }
+          }
+        }
+      }
+    </script>
+    <!-- 3) Your own CSS (if any) -->
+    <link rel="stylesheet" href="/src/index.css" />
   </head>
   <body>
     <div id="root"></div>
