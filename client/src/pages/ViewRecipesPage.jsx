@@ -1,4 +1,3 @@
-// client/src/pages/ViewRecipesPage.jsx
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -55,57 +54,69 @@ export default function ViewRecipesPage() {
               key={r.id}
               className="border rounded-lg p-4 bg-pastelAccent shadow flex justify-between items-start"
             >
-              <div>
-                <h3 className="text-xl font-semibold text-navy">{r.title}</h3>
-                <p className="text-sm text-navy/70 mb-1">
-                  {r.category || '–'} • {r.duration || '–'}
-                </p>
-                <p className="text-navy mb-1">
-                  <strong>Servings:</strong> {r.servings ?? '–'}
-                </p>
-                <p className="text-navy mb-1">
-                  <strong>Calories:</strong> {r.calories ?? '–'}
-                </p>
-                <p className="text-navy mb-1">
-                  <strong>Ingredients:</strong> {r.ingredients}
-                </p>
-                <p className="text-navy">
-                  <strong>Instructions:</strong>
-                  <br />
-                  {r.instructions.split('\n').map((line, i) => (
-                    <span key={i}>
-                      {line}
-                      <br />
-                    </span>
-                  ))}
-                </p>
-              </div>
-              <div className="flex space-x-2">
-                <Link to={`/recipes/${r.id}/edit`} className="text-blue-500 hover:underline">Edit</Link>
-              </div>
-              <button
-                onClick={() => {
-                  if (window.confirm('Delete this recipe?')) {
-                    fetch(`http://localhost:3001/api/recipes/${r.id}`, {
-                      method: 'DELETE',
-                      headers: { Authorization: `Bearer ${token}` }
-                    })
-                      .then(res => res.json())
-                      .then(() => {
-                        setRecipes(rs => rs.filter(x => x.id !== r.id));
-                        // update cache
-                        localStorage.setItem(
-                          'recipes',
-                          JSON.stringify(recipes.filter(x => x.id !== r.id))
-                        );
-                      })
-                      .catch(err => setError(err.message));
-                  }
-                }}
-                className="text-red-600 hover:underline ml-4 self-start"
+              {/* Clickable card wrapper */}
+              <Link
+                to={`/recipes/${r.id}`}
+                className="flex-1 cursor-pointer"
               >
-                Delete
-              </button>
+                <div>
+                  <h3 className="text-xl font-semibold text-navy">{r.title}</h3>
+                  <p className="text-sm text-navy/70 mb-1">
+                    {r.category || '–'} • {r.duration || '–'}
+                  </p>
+                  <p className="text-navy mb-1">
+                    <strong>Servings:</strong> {r.servings ?? '–'}
+                  </p>
+                  <p className="text-navy mb-1">
+                    <strong>Calories:</strong> {r.calories ?? '–'}
+                  </p>
+                  <p className="text-navy mb-1">
+                    <strong>Ingredients:</strong> {r.ingredients}
+                  </p>
+                  <p className="text-navy">
+                    <strong>Instructions:</strong>
+                    <br />
+                    {r.instructions.split('\n').map((line, i) => (
+                      <span key={i}>
+                        {line}
+                        <br />
+                      </span>
+                    ))}
+                  </p>
+                </div>
+              </Link>
+
+              {/* Action buttons */}
+              <div className="flex space-x-2 ml-4 self-start">
+                <Link
+                  to={`/recipes/${r.id}/edit`}
+                  className="text-blue-500 hover:underline"
+                >
+                  Edit
+                </Link>
+                <button
+                  onClick={() => {
+                    if (window.confirm('Delete this recipe?')) {
+                      fetch(`http://localhost:3001/api/recipes/${r.id}`, {
+                        method: 'DELETE',
+                        headers: { Authorization: `Bearer ${token}` }
+                      })
+                        .then(res => res.json())
+                        .then(() => {
+                          setRecipes(rs => rs.filter(x => x.id !== r.id));
+                          localStorage.setItem(
+                            'recipes',
+                            JSON.stringify(recipes.filter(x => x.id !== r.id))
+                          );
+                        })
+                        .catch(err => setError(err.message));
+                    }
+                  }}
+                  className="text-red-600 hover:underline"
+                >
+                  Delete
+                </button>
+              </div>
             </li>
           ))}
         </ul>

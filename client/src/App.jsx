@@ -6,6 +6,7 @@ import AuthPage         from './pages/AuthPage';
 import AddRecipePage    from './pages/AddRecipePage';
 import ViewRecipesPage  from './pages/ViewRecipesPage';
 import EditRecipePage   from './pages/EditRecipePage';
+import RecipeDetailsPage from './pages/RecipeDetailsPage';
 
 export default function App() {
   const { token, logout } = useContext(AuthContext);
@@ -45,6 +46,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <ViewRecipesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/recipes/:id"
+          element={
+            <ProtectedRoute>
+              <RecipeDetailsPage />
             </ProtectedRoute>
           }
         />
