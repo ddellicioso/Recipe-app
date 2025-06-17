@@ -3,6 +3,7 @@ import cors from 'cors';
 import multer from 'multer';             // ← import cors
 import path from 'path';
 import fs from 'fs';
+import helmet from 'helmet';
 import { fileURLToPath } from 'url';
 import authRoutes from './routes/authRoutes.js';
 import recipeRoutes from './routes/recipeRoutes.js';
@@ -12,6 +13,19 @@ const __dirname  = path.dirname(__filename);
 const app        = express();
 const PORT       = process.env.PORT || 3001;
 
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],             // allow same-origin by default
+      scriptSrc:  ["'self'"],             // your JS
+      styleSrc:   ["'self'", "'unsafe-inline'"], // your CSS + inline styles
+      imgSrc:     ["'self'", "data:"],    // allow images & inline data URIs
+      fontSrc:    ["'self'", "data:"],    // allow fonts & inline data URIs
+      connectSrc: ["'self'", process.env.VITE_API_URL], // your API
+      // add any other directives you need…
+    }
+  }
+}));
 // — Allow CORS from your Vite dev origin
 app.use(cors({
   origin: 'http://localhost:5173',  // React/Vite dev server
