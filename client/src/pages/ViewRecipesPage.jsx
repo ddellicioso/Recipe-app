@@ -1,11 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
+import { useContext } from 'react';
+
+const CATEGORIES = ['All', 'Italian', 'Japanese', 'Quick Prep', 'Indonesian', 'Korean'];
 
 export default function ViewRecipesPage() {
   const [recipes, setRecipes] = useState([]);
   const [error, setError]     = useState(null);
+  const [category, setCategory] = useState('All');
   const token = localStorage.getItem('token');
+  const navigate = useNavigate();
+  const { logout } = useContext(AuthContext);
 
+  // Fetch recipes
   useEffect(() => {
     async function loadRecipes() {
       try {
@@ -18,109 +26,89 @@ export default function ViewRecipesPage() {
         }
         const data = await res.json();
         setRecipes(data);
-        // Cache for offline use
-        localStorage.setItem('recipes', JSON.stringify(data));
       } catch (err) {
-        console.warn('Fetch failed, loading from cache:', err);
-        const cached = localStorage.getItem('recipes');
-        if (cached) {
-          setRecipes(JSON.parse(cached));
-        } else {
-          setError('Unable to load recipes (offline and no cache)');
-        }
+        setError(err.message);
       }
     }
-
     loadRecipes();
   }, [token]);
 
   if (error) {
     return (
-      <div className="p-4 max-w-xl mx-auto">
+      <div className="flex items-center justify-center min-h-screen">
         <p className="text-red-500">{error}</p>
       </div>
     );
   }
 
-  return (
-    <div className="p-4 max-w-xl mx-auto font-nunito">
-      <h2 className="text-2xl font-bold mb-4 text-navy">My Recipes</h2>
-      {recipes.length === 0 ? (
-        <p className="text-gray-600">No recipes yet.</p>
-      ) : (
-        <ul className="space-y-4">
-          {recipes.map(r => (
-            <li
-              key={r.id}
-              className="border rounded-lg p-4 bg-pastelAccent shadow flex justify-between items-start"
-            >
-              {/* Clickable card wrapper */}
-              <Link
-                to={`/recipes/${r.id}`}
-                className="flex-1 cursor-pointer"
-              >
-                <div>
-                  <h3 className="text-xl font-semibold text-navy">{r.title}</h3>
-                  <p className="text-sm text-navy/70 mb-1">
-                    {r.category || '–'} • {r.duration || '–'}
-                  </p>
-                  <p className="text-navy mb-1">
-                    <strong>Servings:</strong> {r.servings ?? '–'}
-                  </p>
-                  <p className="text-navy mb-1">
-                    <strong>Calories:</strong> {r.calories ?? '–'}
-                  </p>
-                  <p className="text-navy mb-1">
-                    <strong>Ingredients:</strong> {r.ingredients}
-                  </p>
-                  <p className="text-navy">
-                    <strong>Instructions:</strong>
-                    <br />
-                    {r.instructions.split('\n').map((line, i) => (
-                      <span key={i}>
-                        {line}
-                        <br />
-                      </span>
-                    ))}
-                  </p>
-                </div>
-              </Link>
+  // Filter by category
+  const filtered = category === 'All'
+    ? recipes
+    : recipes.filter(r => r.category === category);
 
-              {/* Action buttons */}
-              <div className="flex space-x-2 ml-4 self-start">
-                <Link
-                  to={`/recipes/${r.id}/edit`}
-                  className="text-blue-500 hover:underline"
-                >
-                  Edit
-                </Link>
-                <button
-                  onClick={() => {
-                    if (window.confirm('Delete this recipe?')) {
-                      fetch(`http://localhost:3001/api/recipes/${r.id}`, {
-                        method: 'DELETE',
-                        headers: { Authorization: `Bearer ${token}` }
-                      })
-                        .then(res => res.json())
-                        .then(() => {
-                          setRecipes(rs => rs.filter(x => x.id !== r.id));
-                          localStorage.setItem(
-                            'recipes',
-                            JSON.stringify(recipes.filter(x => x.id !== r.id))
-                          );
-                        })
-                        .catch(err => setError(err.message));
-                    }
-                  }}
-                  className="text-red-600 hover:underline"
-                >
-                  Delete
-                </button>
+  return (
+    <div className="w-screen h-screen bg-navy flex items-center justify-center px-4">
+      <div className="w-full max-w-md">
+        {/* Make the title a logout/back link */}
+        <h1
+          className="text-pastelYellow text-3xl font-bold text-center pt-6 cursor-pointer"
+          onClick={() => {
+            logout();
+            navigate('/');
+          }}
+        >
+          Savoré
+        </h1>
+
+        {/* Category Selector */}
+        <div className="px-4 mt-6">
+          <label className="block mb-2">Category</label>
+          <select
+            value={category}
+            onChange={e => setCategory(e.target.value)}
+            className="w-full p-2 bg-pastelAccent text-navy rounded border border-pastelPink focus:outline-none"
+          >
+            {CATEGORIES.map(cat => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Recipe Cards */}
+        <div className="px-4 mt-6 space-y-4">
+          {filtered.map(r => (
+            <div
+              key={r.id}
+              onClick={() => navigate(`/recipes/${r.id}`)}
+              className="flex items-center bg-navy border border-pastelPink rounded-lg p-4 cursor-pointer hover:bg-opacity-90 transition"
+            >
+              {r.image_path && (
+                <img
+                  src={`http://localhost:3001${r.image_path}`}
+                  alt={r.title}
+                  className="w-16 h-16 object-cover rounded mr-4"
+                />
+              )}
+              <div className="flex-1">
+                <h3 className="text-2xl font-semibold text-pastelYellow">{r.title}</h3>
+                <p className="text-sm text-pastelPink/80">
+                  {r.duration || '-'} • {r.calories ? `${r.calories}kcal` : '-'}
+                </p>
               </div>
-            </li>
+            </div>
           ))}
-        </ul>
-      )}
+        </div>
+
+        {/* Bottom Add Button */}
+        <div className="fixed bottom-6 right-6">
+          <button
+            onClick={() => navigate('/add-recipe')}
+            className="w-12 h-12 bg-pastelPink text-navy rounded-full text-4xl flex items-center justify-center shadow-lg"
+          >
+            +
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

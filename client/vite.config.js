@@ -3,10 +3,12 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import postcssTailwind from '@tailwindcss/postcss';
 import autoprefixer from 'autoprefixer';
+import svgr from 'vite-plugin-svgr';
 
 export default defineConfig({
   plugins: [
     react(),
+    svgr(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['index.html'],
@@ -45,7 +47,8 @@ export default defineConfig({
           },
         ]
       }
-    })
+    }),
+    
   ],
   css: {
     postcss: {

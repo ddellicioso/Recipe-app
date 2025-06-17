@@ -1,12 +1,17 @@
+// client/src/pages/RecipeDetailsPage.jsx
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import TimeIcon     from '../components/icons/TimeIcon';
+import ServingsIcon from '../components/icons/ServingsIcon';
+import CaloriesIcon from '../components/icons/CaloriesIcon';
+import { useParams, useNavigate } from 'react-router-dom';
 
 export default function RecipeDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [recipe, setRecipe] = useState(null);
-  const [error, setError] = useState('');
   const token = localStorage.getItem('token');
+
+  const [recipe, setRecipe] = useState(null);
+  const [error, setError]   = useState('');
 
   useEffect(() => {
     async function fetchRecipe() {
@@ -14,90 +19,120 @@ export default function RecipeDetailsPage() {
         const res = await fetch(`http://localhost:3001/api/recipes/${id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
+        if (res.status === 403) {
+          navigate('/');
+          return;
+        }
         const data = await res.json();
-        if (!res.ok) throw new Error(data.message || 'Failed to load recipe');
+        if (!res.ok) throw new Error(data.message || 'Failed to load');
         setRecipe(data);
       } catch (err) {
         setError(err.message);
       }
     }
     fetchRecipe();
-  }, [id, token]);
-
-  const handleDelete = async () => {
-    if (!window.confirm('Delete this recipe?')) return;
-    try {
-      const res = await fetch(`http://localhost:3001/api/recipes/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message);
-      navigate('/recipes');
-    } catch (err) {
-      setError(err.message);
-    }
-  };
+  }, [id, token, navigate]);
 
   if (error) {
     return (
-      <div className="p-4 max-w-xl mx-auto text-red-500">
-        <p>Error: {error}</p>
-        <Link to="/recipes" className="underline text-pastelPink mt-2 inline-block">Back to list</Link>
+      <div className="w-screen h-screen bg-navy flex items-center justify-center px-4">
+        <p className="text-pastelPink">{error}</p>
+      </div>
+    );
+  }
+  if (!recipe) {
+    return (
+      <div className="w-screen h-screen bg-navy flex items-center justify-center px-4">
+        <p className="text-pastelPink">Loading…</p>
       </div>
     );
   }
 
-  if (!recipe) {
-    return <p className="p-4">Loading...</p>;
-  }
-
   return (
-    <div className="p-6 max-w-2xl mx-auto font-nunito bg-pastelAccent rounded-lg shadow mt-8">
-      <Link to="/recipes" className="text-pastelPink hover:underline">&larr; Back</Link>
+    <div className="w-screen bg-navy min-h-screen flex justify-center px-4 py-8">
+      <div className="w-full max-w-md overflow-y-auto pb-24">
+        {/* back link */}
+        <button
+          onClick={() => navigate('/recipes')}
+          className="bg-navy text-pastelPink text-sm mb-4 hover:underline"
+        >
+          &lt; recipes
+        </button>
 
-      {/* Display image if exists */}
-      {recipe.image_path && (
-        <img
+        {/* Title */}
+        <h1 className="text-center text-3xl font-bold text-pastelYellow mb-4">
+          Savoré
+        </h1>
+
+        {/* Image */}
+        {recipe.image_path && (
+          <img
             src={`http://localhost:3001${recipe.image_path}`}
             alt={recipe.title}
-            className="w-full h-64 object-cover rounded mb-4"
-        />
+            className="w-full h-48 object-cover rounded-lg mb-4"
+          />
         )}
 
-      <h1 className="text-3xl font-bold text-navy mb-2">{recipe.title}</h1>
-      <p className="text-sm text-navy/70 mb-4">
-        {recipe.category || '-'} &#8226; {recipe.duration || '-'}
-      </p>
-      <div className="mb-4 text-navy">
-        <p><strong>Servings:</strong> {recipe.servings ?? '-'}</p>
-        <p><strong>Calories:</strong> {recipe.calories ?? '-'}</p>
-      </div>
-      <section className="mb-4">
-        <h2 className="text-xl font-semibold text-navy mb-2">Ingredients</h2>
-        <ul className="list-disc list-inside text-navy">
-          {recipe.ingredients.split(', ').map((ing, i) => <li key={i}>{ing}</li>)}
-        </ul>
-      </section>
-      <section className="mb-6">
-        <h2 className="text-xl font-semibold text-navy mb-2">Instructions</h2>
-        <ol className="list-decimal list-inside text-navy">
-          {recipe.instructions.split('\n').map((step, i) => <li key={i}>{step}</li>)}
-        </ol>
-      </section>
-      <div className="flex space-x-4">
+        {/* Recipe name & category */}
+        <h2 className="text-2xl font-semibold text-pastelYellow mb-1">
+          {recipe.title}
+        </h2>
+        <p className="text-sm italic text-pastelPink mb-4">
+          {recipe.category || '-'}
+        </p>
+
+        {/* Details row */}
+        <div className="flex justify-between text-pastelAccent mb-6">
+          <div className="flex items-center space-x-1">
+            <TimeIcon className="w-5 h-5" />
+            <span>{recipe.duration || '-'}</span>
+          </div>
+          <div className="flex items-center space-x-1">
+            <ServingsIcon className="w-5 h-5" />
+            <span>{recipe.servings ?? '-'}</span>
+          </div>
+          <div className="flex items-center space-x-1">
+            <CaloriesIcon className="w-5 h-5" />
+            <span>{recipe.calories ? `${recipe.calories} kcal` : '-'}</span>
+          </div>
+        </div>
+
+        {/* Ingredients */}
+        <section className="mb-6">
+          <h3 className="text-xl font-semibold text-pastelAccent mb-2">
+            Ingredients
+          </h3>
+          <ul className="list-disc list-inside text-pastelAccent space-y-1">
+            {recipe.ingredients.split(', ').map((ing, i) => (
+              <li key={i}>{ing}</li>
+            ))}
+          </ul>
+        </section>
+
+        {/* Instructions */}
+        <section>
+          <h3 className="text-xl font-semibold text-pastelAccent mb-2">
+            Step by step
+          </h3>
+          <ol className="list-decimal list-inside text-pastelAccent space-y-1">
+            {recipe.instructions.split('\n').map((step, i) => (
+              <li key={i}>{step}</li>
+            ))}
+          </ol>
+        </section>
+
+        {/* Floating Edit button */}
         <button
           onClick={() => navigate(`/recipes/${id}/edit`)}
-          className="px-4 py-2 bg-pastelYellow text-navy rounded hover:bg-pastelPink transition"
+          className="mt-6 w-full py-2 bg-pastelPink text-navy font-bold rounded hover:bg-pastelAccent transition"
         >
-          Edit
+          Edit Recipe
         </button>
-        <button
-          onClick={handleDelete}
-          className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
-        >
-          Delete
-        </button>
+
+        {/* Footer */}
+        <footer className="text-xs text-pastelYellow mt-8 text-center opacity-70">
+          © 2025 Adeline Agna. All rights reserved.
+        </footer>
       </div>
     </div>
   );

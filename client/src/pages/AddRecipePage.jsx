@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useParams, useNavigate, Link } from 'react-router-dom';
 
 const CATEGORIES = ["Italian", "Japanese", "Quick Prep", "Indonesian"];
 
@@ -90,7 +91,13 @@ const AddRecipePage = () => {
 
   return (
     <div className="bg-navy text-pastelPink p-8 rounded-3xl max-w-md mx-auto mt-8 font-nunito shadow-lg relative">
-      <a href="#" className="absolute left-8 top-8 text-pastelPink underline hover:text-pastelAccent text-sm">&lt; cancel</a>
+      {/* Cancel link */}
+      <Link
+        to={`/recipes`}
+        className="absolute left-8 top-8 text-pastelPink underline hover:text-pastelAccent text-sm"
+      >
+        &lt; cancel
+      </Link>
       <h2 className="text-center mb-4 font-extrabold text-3xl tracking-tight text-pastelPink">Savoré</h2>
       <form onSubmit={handleSubmit} className="space-y-3">
         <div>
