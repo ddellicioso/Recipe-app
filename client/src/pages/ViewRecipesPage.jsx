@@ -1,5 +1,6 @@
 // client/src/pages/ViewRecipesPage.jsx
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 export default function ViewRecipesPage() {
   const [recipes, setRecipes] = useState([]);
@@ -78,6 +79,9 @@ export default function ViewRecipesPage() {
                     </span>
                   ))}
                 </p>
+              </div>
+              <div className="flex space-x-2">
+                <Link to={`/recipes/${r.id}/edit`} className="text-blue-500 hover:underline">Edit</Link>
               </div>
               <button
                 onClick={() => {
