@@ -15,6 +15,8 @@ const AddRecipePage = () => {
   const [ingredients, setIngredients] = useState([]);
   const [steps, setSteps] = useState([]);
   const [message, setMessage] = useState("");
+  const [imageFile, setImageFile] = useState(null);
+
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -43,29 +45,44 @@ const AddRecipePage = () => {
       return;
     }
 
-    const body = {
-      title: form.foodName,
-      category: form.category,
-      duration: form.duration,
-      servings: form.servings,
-      calories: form.calories,
-      ingredients: ingredients.join(', '),
-      instructions: steps.join('\n'),
-    };
+    // Build FormData for multipart upload
+    const formData = new FormData();
+    formData.append('title', form.foodName);
+    formData.append('category', form.category);
+    formData.append('duration', form.duration);
+    formData.append('servings', form.servings);
+    formData.append('calories', form.calories);
+    formData.append('ingredients', ingredients.join(', '));
+    formData.append('instructions', steps.join('\n'));
+    if (imageFile) {
+      formData.append('image', imageFile);
+    }
 
     try {
       const res = await fetch("http://localhost:3001/api/recipes/add", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          // Let browser set Content-Type for multipart
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(body),
+        body: formData,
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
       setMessage("Recipe added! 🎉");
-      // Optionally clear form here
+      // Optionally clear form
+      setForm({
+        foodName: "",
+        category: CATEGORIES[0],
+        duration: "",
+        servings: "",
+        calories: "",
+        ingredientInput: "",
+        stepInput: "",
+      });
+      setIngredients([]);
+      setSteps([]);
+      setImageFile(null);
     } catch (err) {
       setMessage(err.message);
     }
@@ -76,6 +93,15 @@ const AddRecipePage = () => {
       <a href="#" className="absolute left-8 top-8 text-pastelPink underline hover:text-pastelAccent text-sm">&lt; cancel</a>
       <h2 className="text-center mb-4 font-extrabold text-3xl tracking-tight text-pastelPink">Savoré</h2>
       <form onSubmit={handleSubmit} className="space-y-3">
+        <div>
+          <label>Photo</label>
+          <input 
+            type="file"
+            accept="image/*"
+            onChange={e => setImageFile(e.target.files[0])}
+            className="block mt-1"
+          />
+        </div>
         <div>
           <label className="block mb-1">food name</label>
           <input

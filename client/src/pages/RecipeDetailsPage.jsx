@@ -55,7 +55,17 @@ export default function RecipeDetailsPage() {
   return (
     <div className="p-6 max-w-2xl mx-auto font-nunito bg-pastelAccent rounded-lg shadow mt-8">
       <Link to="/recipes" className="text-pastelPink hover:underline">&larr; Back</Link>
-      <h1 className="text-3xl font-bold text-navy mt-4 mb-2">{recipe.title}</h1>
+
+      {/* Display image if exists */}
+      {recipe.image_path && (
+        <img
+            src={`http://localhost:3001${recipe.image_path}`}
+            alt={recipe.title}
+            className="w-full h-64 object-cover rounded mb-4"
+        />
+        )}
+
+      <h1 className="text-3xl font-bold text-navy mb-2">{recipe.title}</h1>
       <p className="text-sm text-navy/70 mb-4">
         {recipe.category || '-'} &#8226; {recipe.duration || '-'}
       </p>

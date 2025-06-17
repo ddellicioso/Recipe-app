@@ -1,3 +1,4 @@
+// client/src/pages/EditRecipePage.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 
@@ -6,7 +7,9 @@ const CATEGORIES = ["Italian", "Japanese", "Quick Prep", "Indonesian"];
 export default function EditRecipePage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [form, setForm] = useState({
+  
+  const [recipe, setRecipe] = useState(null);
+  const [form, setForm]     = useState({
     foodName: '',
     category: CATEGORIES[0],
     duration: '',
@@ -16,9 +19,11 @@ export default function EditRecipePage() {
     stepInput: ''
   });
   const [ingredients, setIngredients] = useState([]);
-  const [steps, setSteps] = useState([]);
-  const [message, setMessage] = useState('');
+  const [steps, setSteps]             = useState([]);
+  const [imageFile, setImageFile]     = useState(null);
+  const [message, setMessage]         = useState('');
 
+  // Fetch the existing recipe
   useEffect(() => {
     const token = localStorage.getItem('token');
     fetch(`http://localhost:3001/api/recipes/${id}`, {
@@ -26,6 +31,8 @@ export default function EditRecipePage() {
     })
       .then(res => res.json())
       .then(data => {
+        setRecipe(data);
+        // Prefill form
         setForm({
           foodName: data.title || '',
           category: data.category || CATEGORIES[0],
@@ -62,23 +69,22 @@ export default function EditRecipePage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem('token');
-    const body = {
-      title: form.foodName,
-      category: form.category,
-      duration: form.duration,
-      servings: form.servings,
-      calories: form.calories,
-      ingredients: ingredients.join(', '),
-      instructions: steps.join('\n')
-    };
+
+    const formData = new FormData();
+    formData.append('title', form.foodName);
+    formData.append('category', form.category);
+    formData.append('duration', form.duration);
+    formData.append('servings', form.servings);
+    formData.append('calories', form.calories);
+    formData.append('ingredients', ingredients.join(', '));
+    formData.append('instructions', steps.join('\n'));
+    if (imageFile) formData.append('image', imageFile);
+
     try {
       const res = await fetch(`http://localhost:3001/api/recipes/${id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify(body)
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
@@ -88,13 +94,40 @@ export default function EditRecipePage() {
     }
   };
 
+  // Show loading state
+  if (!recipe) {
+    return <p className="p-4">Loading recipe…</p>;
+  }
+
   return (
     <div className="bg-navy text-pastelPink p-8 rounded-3xl max-w-md mx-auto mt-8 font-nunito shadow-lg relative">
-      <Link to="/recipes" className="absolute left-6 top-6 text-pastelPink underline hover:text-pastelAccent text-sm">
+      <Link to="/recipes" className="absolute left-8 top-8 text-pastelPink underline hover:text-pastelAccent text-sm">
         &lt; cancel
       </Link>
-      <h2 className="text-center mb-4 font-extrabold text-3xl tracking-tight text-pastelPink">Edit Recipe</h2>
+      <h2 className="text-center mb-4 font-extrabold text-3xl tracking-tight text-pastelPink">
+        Edit Recipe
+      </h2>
+
+      {/* Existing image preview */}
+      {recipe.image_path && (
+        <img
+          src={`http://localhost:3001${recipe.image_path}`}
+          alt={recipe.title}
+          className="w-full h-48 object-cover rounded mb-4"
+        />
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-3">
+        <div>
+          <label className="block mb-1">Change Photo</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={e => setImageFile(e.target.files[0])}
+            className="block mt-1"
+          />
+        </div>
+
         <div>
           <label className="block mb-1">food name</label>
           <input
@@ -104,6 +137,7 @@ export default function EditRecipePage() {
             className="w-full rounded-md p-2 bg-pastelAccent text-navy focus:outline-none"
           />
         </div>
+
         <div>
           <label className="block mb-1">category</label>
           <select
@@ -112,9 +146,12 @@ export default function EditRecipePage() {
             onChange={handleChange}
             className="w-full rounded-md p-2 bg-pastelAccent text-navy focus:outline-none"
           >
-            {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+            {CATEGORIES.map(cat => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
           </select>
         </div>
+
         <div className="flex gap-3">
           <div className="flex-1">
             <label className="block mb-1">duration</label>
@@ -123,7 +160,7 @@ export default function EditRecipePage() {
               value={form.duration}
               onChange={handleChange}
               className="w-full rounded-md p-2 bg-pastelAccent text-navy focus:outline-none"
-              placeholder="30 min"
+              placeholder="e.g. 30 min"
             />
           </div>
           <div className="flex-1">
@@ -134,7 +171,7 @@ export default function EditRecipePage() {
               value={form.servings}
               onChange={handleChange}
               className="w-full rounded-md p-2 bg-pastelAccent text-navy focus:outline-none"
-              placeholder="2"
+              placeholder="e.g. 2"
             />
           </div>
           <div className="flex-1">
@@ -145,10 +182,11 @@ export default function EditRecipePage() {
               value={form.calories}
               onChange={handleChange}
               className="w-full rounded-md p-2 bg-pastelAccent text-navy focus:outline-none"
-              placeholder="350"
+              placeholder="e.g. 350"
             />
           </div>
         </div>
+
         <div>
           <label className="block mb-1">ingredients</label>
           <div className="flex mb-1">
@@ -171,6 +209,7 @@ export default function EditRecipePage() {
             {ingredients.map((ing, i) => <li key={i}>{ing}</li>)}
           </ul>
         </div>
+
         <div>
           <label className="block mb-1">step by step</label>
           <div className="flex mb-1">
@@ -193,14 +232,16 @@ export default function EditRecipePage() {
             {steps.map((step, i) => <li key={i}>{step}</li>)}
           </ol>
         </div>
+
         <button
           type="submit"
-          className="mt-2 w-full py-2 rounded-lg bg-pastelYellow text-navy font-bold shadow hover:bg-pastelPink transition"
+          className="mt-2 w-full py-2 rounded-lg bg-pastelYellow text-navy font-bold hover:bg-pastelPink transition"
         >
           update recipe
         </button>
       </form>
-      {message && <div className="text-pastelYellow mt-3">{message}</div>}
+
+      {message && <p className="mt-4 text-pastelYellow">{message}</p>}
     </div>
   );
 }

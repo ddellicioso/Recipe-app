@@ -1,7 +1,6 @@
-// server/controllers/recipeController.js
 import db from '../db/database.js';
 
-// NEW: insert every field
+// Create recipe with optional image
 function addRecipe(req, res) {
   const {
     title,
@@ -12,18 +11,33 @@ function addRecipe(req, res) {
     ingredients,
     instructions
   } = req.body;
+  const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
   const userId = req.user.id;
 
-  // (optional) validate that all required fields are present …
-
   const sql = `
-    INSERT INTO recipes 
-      (title, category, duration, servings, calories, ingredients, instructions, user_id)
-    VALUES (?,      ?,        ?,        ?,        ?,        ?,           ?,            ?)
+    INSERT INTO recipes
+      (title, category, duration, servings, calories, ingredients, instructions, image_path, user_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
   db.run(
     sql,
-    [
+    [title, category, duration, servings, calories, ingredients, instructions, imagePath, userId],
+    function (err) {
+      if (err) {
+        console.error('Add recipe error:', err);
+        return res.status(500).json({ message: 'Failed to add recipe.' });
+      }
+      res.status(201).json({ message: 'Recipe added successfully', recipeId: this.lastID });
+    }
+  );
+}
+
+// List all recipes (include image path)
+function listRecipes(req, res) {
+  const userId = req.user.id;
+  const sql = `
+    SELECT
+      id,
       title,
       category,
       duration,
@@ -31,29 +45,9 @@ function addRecipe(req, res) {
       calories,
       ingredients,
       instructions,
-      userId
-    ],
-    function (err) {
-      if (err) {
-        console.error('Add recipe error:', err);
-        return res.status(500).json({ message: 'Failed to add recipe.' });
-      }
-      res.status(201).json({
-        message: 'Recipe added successfully',
-        recipeId: this.lastID
-      });
-    }
-  );
-}
-
-
-// Read all
-function listRecipes(req, res) {
-  console.log('🔍 listRecipes called for user:', req.user.id);
-  const userId = req.user.id;
-  const sql = `
-    SELECT id, title, category, duration, servings, calories, ingredients, instructions
-    FROM recipes WHERE user_id = ?
+      image_path
+    FROM recipes
+    WHERE user_id = ?
   `;
   db.all(sql, [userId], (err, rows) => {
     if (err) {
@@ -64,13 +58,23 @@ function listRecipes(req, res) {
   });
 }
 
-// Read one
+// Get one recipe by ID
 function getRecipe(req, res) {
   const userId = req.user.id;
   const { id } = req.params;
   const sql = `
-    SELECT id, title, category, duration, servings, calories, ingredients, instructions
-    FROM recipes WHERE id = ? AND user_id = ?
+    SELECT
+      id,
+      title,
+      category,
+      duration,
+      servings,
+      calories,
+      ingredients,
+      instructions,
+      image_path
+    FROM recipes
+    WHERE id = ? AND user_id = ?
   `;
   db.get(sql, [id, userId], (err, row) => {
     if (err) {
@@ -82,18 +86,42 @@ function getRecipe(req, res) {
   });
 }
 
-// Update
+// Update a recipe (conditionally update image)
 function updateRecipe(req, res) {
   const userId = req.user.id;
   const { id } = req.params;
-  const { title, category, duration, servings, calories, ingredients, instructions } = req.body;
+  const {
+    title,
+    category,
+    duration,
+    servings,
+    calories,
+    ingredients,
+    instructions
+  } = req.body;
+  const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
 
-  const sql = `
-    UPDATE recipes
-    SET title = ?, category = ?, duration = ?, servings = ?, calories = ?, ingredients = ?, instructions = ?
-    WHERE id = ? AND user_id = ?
-  `;
-  db.run(sql, [title, category, duration, servings, calories, ingredients, instructions, id, userId], function (err) {
+  let sql;
+  let params;
+  if (imagePath) {
+    sql = `
+      UPDATE recipes
+      SET title = ?, category = ?, duration = ?, servings = ?, calories = ?,
+          ingredients = ?, instructions = ?, image_path = ?
+      WHERE id = ? AND user_id = ?
+    `;
+    params = [title, category, duration, servings, calories, ingredients, instructions, imagePath, id, userId];
+  } else {
+    sql = `
+      UPDATE recipes
+      SET title = ?, category = ?, duration = ?, servings = ?, calories = ?,
+          ingredients = ?, instructions = ?
+      WHERE id = ? AND user_id = ?
+    `;
+    params = [title, category, duration, servings, calories, ingredients, instructions, id, userId];
+  }
+
+  db.run(sql, params, function (err) {
     if (err) {
       console.error('Update recipe error:', err);
       return res.status(500).json({ message: 'Failed to update recipe.' });
@@ -103,7 +131,7 @@ function updateRecipe(req, res) {
   });
 }
 
-// Delete
+// Delete a recipe
 function deleteRecipe(req, res) {
   const userId = req.user.id;
   const { id } = req.params;

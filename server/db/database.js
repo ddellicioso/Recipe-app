@@ -25,6 +25,7 @@ db.serialize(() => {
     calories INTEGER,
     ingredients TEXT,
     instructions TEXT,
+    image_path TEXT,
     FOREIGN KEY (user_id) REFERENCES users(id)
   )`);
 });

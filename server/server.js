@@ -1,5 +1,6 @@
 import express from 'express';
-import cors from 'cors';             // ← import cors
+import cors from 'cors';
+import multer from 'multer';             // ← import cors
 import path from 'path';
 import { fileURLToPath } from 'url';
 import authRoutes from './routes/authRoutes.js';
@@ -21,6 +22,8 @@ app.use(express.json());
 // Auth and recipe routes
 app.use('/api/auth', authRoutes);
 app.use('/api/recipes', recipeRoutes);
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 
 // Serve static React build in prod
 const distPath = path.resolve(__dirname, '../client/dist');
@@ -28,5 +31,15 @@ app.use(express.static(distPath));
 app.get('*', (req, res) => {
   res.sendFile(path.join(distPath, 'index.html'));
 });
+
+// Set up storage
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, path.join(__dirname, 'uploads')),
+  filename:    (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `${Date.now()}${ext}`);
+  }
+});
+const upload = multer({ storage });
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
