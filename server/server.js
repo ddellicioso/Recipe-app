@@ -12,8 +12,8 @@ const PORT       = process.env.PORT || 3001;
 
 // — Allow CORS from your Vite dev origin
 app.use(cors({
-  origin: 'http://localhost:4173',  // React/Vite dev server
-  // credentials: true,             // only if you use cookies
+  origin: 'http://localhost:5173',  // React/Vite dev server
+  credentials: true,             // only if you use cookies
 }));
 
 app.use(express.json());

@@ -1,29 +1,62 @@
-import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
-import AuthPage from "./pages/AuthPage";
-import AddRecipePage from "./pages/AddRecipePage";
-import ViewRecipesPage from "./pages/ViewRecipesPage";
-import EditRecipePage from "./pages/EditRecipePage";
+import React, { useContext } from 'react';
+import { Routes, Route, Link, useNavigate } from 'react-router-dom';
+import { AuthContext } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
+import AuthPage         from './pages/AuthPage';
+import AddRecipePage    from './pages/AddRecipePage';
+import ViewRecipesPage  from './pages/ViewRecipesPage';
+import EditRecipePage   from './pages/EditRecipePage';
 
 export default function App() {
+  const { token, logout } = useContext(AuthContext);
+  const nav = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    nav('/');
+  };
+
   return (
-    <Router>
-      <nav className="flex gap-4 bg-navy p-4 text-pastelPink">
-        <Link to="/" className="hover:underline">
-          Home
-        </Link>
-        <Link to="/add-recipe" className="hover:underline">
-          Add Recipe
-        </Link>
-        <Link to="/recipes" className="hover:underline">
-          My Recipes
-        </Link>
+    <>
+      <nav className="bg-navy p-4 text-pastelPink flex justify-between">
+        <div className="space-x-4">
+          <Link to="/">Home</Link>
+          {token && <Link to="/add-recipe">Add Recipe</Link>}
+          {token && <Link to="/recipes">My Recipes</Link>}
+        </div>
+        {token && (
+          <button onClick={handleLogout} className="hover:underline">
+            Logout
+          </button>
+        )}
       </nav>
       <Routes>
         <Route path="/" element={<AuthPage />} />
-        <Route path="/add-recipe" element={<AddRecipePage />} />
-        <Route path="/recipes" element={<ViewRecipesPage />} />
-        <Route path="/recipes/:id/edit" element={<EditRecipePage />} />
+        <Route
+          path="/add-recipe"
+          element={
+            <ProtectedRoute>
+              <AddRecipePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/recipes"
+          element={
+            <ProtectedRoute>
+              <ViewRecipesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/recipes/:id/edit"
+          element={
+            <ProtectedRoute>
+              <EditRecipePage />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
-    </Router>
+    </>
   );
 }
