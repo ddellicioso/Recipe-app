@@ -44,7 +44,8 @@ export default function AuthPage() {
 
   return (
     <div className="w-screen h-screen bg-navy flex items-center justify-center px-4">
-      <div className="w-full max-w-md bg-navy text-pastelPink rounded-2xl p-8 shadow-lg mx-auto">
+      {/* shadow-lg */}
+      <div className="w-full max-w-md bg-navy text-pastelPink rounded-2xl p-8 mx-auto">
         <div className="flex justify-center mb-6">
           <div className="w-24 h-24 rounded-full bg-pastelYellow"></div>
         </div>

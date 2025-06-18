@@ -1,37 +1,55 @@
-import React, { useEffect, useState } from 'react';
+// client/src/pages/ViewRecipesPage.jsx
+import React, { useEffect, useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { useContext } from 'react';
 
 const CATEGORIES = ['All', 'Italian', 'Japanese', 'Quick Prep', 'Indonesian', 'Korean'];
 
 export default function ViewRecipesPage() {
-  const [recipes, setRecipes] = useState([]);
-  const [error, setError]     = useState(null);
-  const [category, setCategory] = useState('All');
-  const token = localStorage.getItem('token');
-  const navigate = useNavigate();
-  const { logout } = useContext(AuthContext);
+  const [recipes, setRecipes]       = useState([]);
+  const [error, setError]           = useState(null);
+  const [category, setCategory]     = useState('All');
+  const { logout, token }           = useContext(AuthContext);
+  const navigate                    = useNavigate();
+  const API = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
   // Fetch recipes
   useEffect(() => {
-    async function loadRecipes() {
+    (async () => {
       try {
-        const res = await fetch('http://localhost:3001/api/recipes/', {
+        const res = await fetch(`${API}/recipes`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (!res.ok) {
           const { message } = await res.json();
           throw new Error(message || 'Failed to fetch recipes');
         }
-        const data = await res.json();
-        setRecipes(data);
+        setRecipes(await res.json());
       } catch (err) {
         setError(err.message);
       }
-    }
-    loadRecipes();
+    })();
   }, [token]);
+
+  // Delete handler
+  const handleDelete = async (e, id) => {
+    e.stopPropagation();
+    if (!window.confirm('Delete this recipe?')) return;
+
+    try {
+      const res = await fetch(`${API}/recipes/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) {
+        const { message } = await res.json();
+        throw new Error(message || 'Delete failed');
+      }
+      setRecipes(rs => rs.filter(r => r.id !== id));
+    } catch (err) {
+      setError(err.message);
+    }
+  };
 
   if (error) {
     return (
@@ -41,28 +59,24 @@ export default function ViewRecipesPage() {
     );
   }
 
-  // Filter by category
   const filtered = category === 'All'
     ? recipes
     : recipes.filter(r => r.category === category);
 
   return (
-    <div className="w-screen h-screen bg-navy flex items-center justify-center px-4">
+    <div className="w-screen min-h-screen bg-navy flex justify-center px-4 py-8">
       <div className="w-full max-w-md">
-        {/* Make the title a logout/back link */}
+        {/* Header & logout */}
         <h1
-          className="text-pastelYellow text-3xl font-bold text-center pt-6 cursor-pointer"
-          onClick={() => {
-            logout();
-            navigate('/');
-          }}
+          className="text-pastelYellow text-3xl font-bold text-center mb-6 cursor-pointer"
+          onClick={() => { logout(); navigate('/'); }}
         >
           Savoré
         </h1>
 
-        {/* Category Selector */}
-        <div className="px-4 mt-6">
-          <label className="block mb-2">Category</label>
+        {/* Category selector */}
+        <div className="mb-6 px-4">
+          <label className="block mb-2 text-pastelYellow">Category</label>
           <select
             value={category}
             onChange={e => setCategory(e.target.value)}
@@ -74,32 +88,58 @@ export default function ViewRecipesPage() {
           </select>
         </div>
 
-        {/* Recipe Cards */}
-        <div className="px-4 mt-6 space-y-4">
+        {/* Recipe list */}
+        <div className="space-y-4 px-4">
           {filtered.map(r => (
             <div
               key={r.id}
-              onClick={() => navigate(`/recipes/${r.id}`)}
-              className="flex items-center bg-navy border border-pastelPink rounded-lg p-4 cursor-pointer hover:bg-opacity-90 transition"
+              className="bg-navy border border-pastelPink rounded-lg p-4 flex items-center justify-between hover:bg-opacity-90 transition"
             >
-              {r.image_path && (
-                <img
-                  src={`http://localhost:3001${r.image_path}`}
-                  alt={r.title}
-                  className="w-16 h-16 object-cover rounded mr-4"
-                />
-              )}
-              <div className="flex-1">
-                <h3 className="text-2xl font-semibold text-pastelYellow">{r.title}</h3>
-                <p className="text-sm text-pastelPink/80">
-                  {r.duration || '-'} • {r.calories ? `${r.calories}kcal` : '-'}
-                </p>
+              {/* Clickable preview */}
+              <div
+                className="flex-1 flex items-center cursor-pointer"
+                onClick={() => navigate(`/recipes/${r.id}`)}
+              >
+                {r.image_path && (
+                  <img
+                    src={`${import.meta.env.VITE_API_URL?.replace('/api','') || 'http://localhost:3001'}${r.image_path}`}
+                    alt={r.title}
+                    className="w-16 h-16 object-cover rounded mr-4"
+                  />
+                )}
+                <div>
+                  <h3 className="text-2xl font-semibold text-pastelYellow">
+                    {r.title}
+                  </h3>
+                  <p className="text-sm text-pastelPink/80">
+                    {r.duration || '-'} • {r.calories ? `${r.calories} kcal` : '-'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex flex-col space-y-2 ml-4">
+                <button
+                  onClick={e => {
+                    e.stopPropagation();
+                    navigate(`/recipes/${r.id}/edit`);
+                  }}
+                  className="text-sm bg-pastelPink text-navy px-3 py-1 rounded hover:bg-pastelAccent transition"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={e => handleDelete(e, r.id)}
+                  className="text-sm bg-transparent border border-pastelPink text-pastelPink px-3 py-1 rounded hover:bg-red-600 hover:text-white transition"
+                >
+                  Delete
+                </button>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Bottom Add Button */}
+        {/* Add recipe button */}
         <div className="fixed bottom-6 right-6">
           <button
             onClick={() => navigate('/add-recipe')}
