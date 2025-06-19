@@ -5,6 +5,9 @@ import ServingsIcon from '../components/icons/ServingsIcon';
 import CaloriesIcon from '../components/icons/CaloriesIcon';
 import { useParams, useNavigate } from 'react-router-dom';
 
+// Determine API base: VITE_API_URL in dev, '' in production
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 export default function RecipeDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -16,14 +19,22 @@ export default function RecipeDetailsPage() {
   useEffect(() => {
     async function fetchRecipe() {
       try {
-        const res = await fetch(`http://localhost:3001/api/recipes/${id}`, {
+        const res = await fetch(`${API_BASE}/api/recipes/${id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
+        // Handle JSON vs HTML errors
+        const contentType = res.headers.get('content-type') || '';
+        let data;
+        if (contentType.includes('application/json')) {
+          data = await res.json();
+        } else {
+          const text = await res.text();
+          throw new Error(text || `Server returned ${res.status}`);
+        }
         if (res.status === 403) {
           navigate('/');
           return;
         }
-        const data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Failed to load');
         setRecipe(data);
       } catch (err) {
@@ -67,7 +78,7 @@ export default function RecipeDetailsPage() {
         {/* Image */}
         {recipe.image_path && (
           <img
-            src={`http://localhost:3001${recipe.image_path}`}
+            src={`${API_BASE}${recipe.image_path}`}
             alt={recipe.title}
             className="w-full h-48 object-cover rounded-lg mb-4"
           />

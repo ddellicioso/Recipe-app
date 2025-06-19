@@ -2,6 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 
+// Pick up your dev URL or use '' in production
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 const CATEGORIES = ['Italian', 'Japanese', 'Quick Prep', 'Indonesian', 'Korean'];
 
 export default function EditRecipePage() {
@@ -26,7 +29,7 @@ export default function EditRecipePage() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch(`http://localhost:3001/api/recipes/${id}`, {
+        const res = await fetch(`${API_BASE}/api/recipes/${id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         const data = await res.json();
@@ -77,7 +80,7 @@ export default function EditRecipePage() {
     if (imageFile) body.append('image', imageFile);
 
     try {
-      const res = await fetch(`http://localhost:3001/api/recipes/${id}`, {
+      const res = await fetch(`${API_BASE}/api/recipes/${id}`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token}` },
         body

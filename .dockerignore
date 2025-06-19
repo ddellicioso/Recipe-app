@@ -1,0 +1,8 @@
+# Ignore everything in node_modules so host modules never leak in
+node_modules
+client/node_modules
+server/node_modules
+
+# Also ignore logs, env files, local builds
+*.log
+*.env

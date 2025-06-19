@@ -1,5 +1,8 @@
 import React, { useState } from "react";
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+
+// Determine API base: VITE_API_URL in dev, '' in production
+const API_BASE = import.meta.env.VITE_API_URL || '';
 
 const CATEGORIES = ["Italian", "Japanese", "Quick Prep", "Indonesian"];
 
@@ -17,7 +20,7 @@ const AddRecipePage = () => {
   const [steps, setSteps] = useState([]);
   const [message, setMessage] = useState("");
   const [imageFile, setImageFile] = useState(null);
-
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -46,7 +49,6 @@ const AddRecipePage = () => {
       return;
     }
 
-    // Build FormData for multipart upload
     const formData = new FormData();
     formData.append('title', form.foodName);
     formData.append('category', form.category);
@@ -60,30 +62,28 @@ const AddRecipePage = () => {
     }
 
     try {
-      const res = await fetch("http://localhost:3001/api/recipes/add", {
+      const res = await fetch(`${API_BASE}/api/recipes/add`, {
         method: "POST",
         headers: {
-          // Let browser set Content-Type for multipart
           Authorization: `Bearer ${token}`,
         },
         body: formData,
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message);
+
+      // Handle JSON vs. non-JSON responses
+      const contentType = res.headers.get('content-type') || '';
+      let data;
+      if (contentType.includes('application/json')) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(text || `Server returned ${res.status}`);
+      }
+
+      if (!res.ok) throw new Error(data.message || 'An error occurred');
+
       setMessage("Recipe added! 🎉");
-      // Optionally clear form
-      setForm({
-        foodName: "",
-        category: CATEGORIES[0],
-        duration: "",
-        servings: "",
-        calories: "",
-        ingredientInput: "",
-        stepInput: "",
-      });
-      setIngredients([]);
-      setSteps([]);
-      setImageFile(null);
+      navigate('/recipes');
     } catch (err) {
       setMessage(err.message);
     }

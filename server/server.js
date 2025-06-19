@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import multer from 'multer';             // ← import cors
+import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import helmet from 'helmet';
@@ -11,52 +11,88 @@ import recipeRoutes from './routes/recipeRoutes.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 const app        = express();
-const PORT       = process.env.PORT || 3001;
 
-app.use(helmet({
-  contentSecurityPolicy: {
+// Use the port Fly injects (or 8080 locally)
+const PORT = process.env.PORT || 8080;
+
+// ─── CSP via Helmet ────────────────────────────────────────────────
+const apiOrigin =
+  process.env.VITE_API_URL ||
+  `https://${process.env.FLY_APP_NAME}.fly.dev`;
+
+app.use(
+  helmet.contentSecurityPolicy({
+    useDefaults: false,
     directives: {
-      defaultSrc: ["'self'"],             // allow same-origin by default
-      scriptSrc:  ["'self'"],             // your JS
-      styleSrc:   ["'self'", "'unsafe-inline'"], // your CSS + inline styles
-      imgSrc:     ["'self'", "data:"],    // allow images & inline data URIs
-      fontSrc:    ["'self'", "data:"],    // allow fonts & inline data URIs
-      connectSrc: ["'self'", process.env.VITE_API_URL], // your API
-      // add any other directives you need…
+      defaultSrc: ["'self'"],
+      scriptSrc: [
+        "'self'",
+        "https://cdn.tailwindcss.com",
+        "'unsafe-inline'"
+      ],
+      styleSrc: [
+        "'self'",
+        "https://cdn.tailwindcss.com",
+        "'unsafe-inline'"
+      ],
+      imgSrc: ["'self'", "data:"],
+      fontSrc: ["'self'", "data:"],
+      connectSrc: ["'self'", apiOrigin],
+      objectSrc: ["'none'"],
+      baseUri:   ["'self'"],
+      formAction:["'self'"]
     }
-  }
-}));
-// — Allow CORS from your Vite dev origin
-app.use(cors({
-  origin: 'http://localhost:5173',  // React/Vite dev server
-  credentials: true,             // only if you use cookies
-}));
+  })
+);
 
+// ─── CORS (only for your Vite dev server) ──────────────────────────
+app.use(
+  cors({
+    origin: 'http://localhost:5173',
+    credentials: true
+  })
+);
+
+// ─── JSON + File Uploads ───────────────────────────────────────────
 app.use(express.json());
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) =>
+      cb(null, path.join(__dirname, 'uploads')),
+    filename: (req, file, cb) =>
+      cb(null, `${Date.now()}${path.extname(file.originalname)}`)
+  })
+});
 
-// Auth and recipe routes
+// ─── API Routes ───────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
 app.use('/api/recipes', recipeRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// ─── JSON‑only 404 for unmatched /api routes ───────────────────────
+app.use('/api', (req, res) => {
+  res.status(404).json({ message: 'API endpoint not found' });
+});
 
-// Serve static React build in prod
-const distPath = path.resolve(__dirname, '../client/dist');
-if (fs.existsSync(distPath)) {
-  app.use(express.static(distPath));
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(distPath, 'index.html'));
+// ─── Global JSON error handler ────────────────────────────────────
+app.use((err, req, res, next) => {
+  console.error(err);
+  res
+    .status(err.status || 500)
+    .json({ message: err.message || 'Internal Server Error' });
+});
+
+// ─── Serve React Build ─────────────────────────────────────────────
+const clientBuildPath = path.join(__dirname, 'public');
+if (fs.existsSync(clientBuildPath)) {
+  app.use(express.static(clientBuildPath));
+  // Only handle non-API routes with SPA fallback
+  app.get(/^(?!\/api\/).*/, (req, res) => {
+    res.sendFile(path.join(clientBuildPath, 'index.html'));
   });
 }
 
-// Set up storage
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, path.join(__dirname, 'uploads')),
-  filename:    (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `${Date.now()}${ext}`);
-  }
-});
-const upload = multer({ storage });
-
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// ─── Start the server ──────────────────────────────────────────────
+app.listen(PORT, '0.0.0.0', () =>
+  console.log(`🚀 Server listening on 0.0.0.0:${PORT}`)
+);

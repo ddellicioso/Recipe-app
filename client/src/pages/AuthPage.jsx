@@ -2,6 +2,9 @@ import React, { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 
+// Determine API base: VITE_API_URL in dev, '' in production
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [form, setForm] = useState({ username: '', password: '' });
@@ -9,22 +12,32 @@ export default function AuthPage() {
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) =>
+    setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const url = isLogin ? '/api/auth/login' : '/api/auth/register';
+    const urlPath = isLogin ? '/api/auth/login' : '/api/auth/register';
+
     try {
-      const res = await fetch(`http://localhost:3001${url}`, {
+      const res = await fetch(`${API_BASE}${urlPath}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setMessage(data.message || 'An error occurred');
-        return;
+
+      // Handle JSON vs. non-JSON errors
+      const contentType = res.headers.get('content-type') || '';
+      let data;
+      if (contentType.includes('application/json')) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(text || `Server returned ${res.status}`);
       }
+
+      if (!res.ok) throw new Error(data.message || 'An error occurred');
+
       if (isLogin) {
         login(data.token);
         navigate('/recipes');
@@ -44,17 +57,20 @@ export default function AuthPage() {
 
   return (
     <div className="w-screen h-screen bg-navy flex items-center justify-center px-4">
-      {/* shadow-lg */}
       <div className="w-full max-w-md bg-navy text-pastelPink rounded-2xl p-8 mx-auto">
         <div className="flex justify-center mb-6">
           <div className="w-24 h-24 rounded-full bg-pastelYellow"></div>
         </div>
         <h1 className="text-center text-3xl font-extrabold text-pastelYellow mb-2">Savoré</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {!isLogin && <>
-            <h2 className="text-2xl font-bold text-pastelPink text-center">Register</h2>
-            <p className="text-xs text-pastelYellow mb-2 text-center">Create your new account now!</p>
-          </>}
+          {!isLogin && (
+            <>
+              <h2 className="text-2xl font-bold text-pastelPink text-center">Register</h2>
+              <p className="text-xs text-pastelYellow mb-2 text-center">
+                Create your new account now!
+              </p>
+            </>
+          )}
           <div>
             <label className="block text-xs mb-1">Username</label>
             <input
@@ -84,19 +100,27 @@ export default function AuthPage() {
             {isLogin ? 'Log in' : 'Sign up'}
           </button>
         </form>
-        {message && <p className="mt-4 text-center text-pastelYellow text-sm">{message}</p>}
+        {message && (
+          <p className="mt-4 text-center text-pastelYellow text-sm">{message}</p>
+        )}
         <div className="mt-4 text-center text-xs">
           {isLogin ? (
             <p>
               Don't have an account yet?{' '}
-              <button onClick={toggleMode} className="text-pastelYellow hover:underline focus:outline-none">
+              <button
+                onClick={toggleMode}
+                className="text-pastelYellow hover:underline focus:outline-none"
+              >
                 Sign up now!
               </button>
             </p>
           ) : (
             <p>
               Already have an account?{' '}
-              <button onClick={toggleMode} className="text-pastelYellow hover:underline focus:outline-none">
+              <button
+                onClick={toggleMode}
+                className="text-pastelYellow hover:underline focus:outline-none"
+              >
                 Log in
               </button>
             </p>

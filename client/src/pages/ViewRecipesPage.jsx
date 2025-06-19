@@ -5,26 +5,34 @@ import { AuthContext } from '../context/AuthContext';
 
 const CATEGORIES = ['All', 'Italian', 'Japanese', 'Quick Prep', 'Indonesian', 'Korean'];
 
+// Determine API base: VITE_API_URL in dev, '' in production
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 export default function ViewRecipesPage() {
-  const [recipes, setRecipes]       = useState([]);
-  const [error, setError]           = useState(null);
-  const [category, setCategory]     = useState('All');
-  const { logout, token }           = useContext(AuthContext);
-  const navigate                    = useNavigate();
-  const API = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+  const [recipes, setRecipes] = useState([]);
+  const [error, setError] = useState(null);
+  const [category, setCategory] = useState('All');
+  const { logout, token } = useContext(AuthContext);
+  const navigate = useNavigate();
 
   // Fetch recipes
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch(`${API}/recipes`, {
+        const res = await fetch(`${API_BASE}/api/recipes`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        if (!res.ok) {
-          const { message } = await res.json();
-          throw new Error(message || 'Failed to fetch recipes');
+        // Handle JSON vs HTML errors
+        const contentType = res.headers.get('content-type') || '';
+        let data;
+        if (contentType.includes('application/json')) {
+          data = await res.json();
+        } else {
+          const text = await res.text();
+          throw new Error(text || `Server returned ${res.status}`);
         }
-        setRecipes(await res.json());
+        if (!res.ok) throw new Error(data.message || 'Failed to fetch recipes');
+        setRecipes(data);
       } catch (err) {
         setError(err.message);
       }
@@ -37,15 +45,20 @@ export default function ViewRecipesPage() {
     if (!window.confirm('Delete this recipe?')) return;
 
     try {
-      const res = await fetch(`${API}/recipes/${id}`, {
+      const res = await fetch(`${API_BASE}/api/recipes/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
-      if (!res.ok) {
-        const { message } = await res.json();
-        throw new Error(message || 'Delete failed');
+      const contentType = res.headers.get('content-type') || '';
+      let data;
+      if (contentType.includes('application/json')) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(text || `Server returned ${res.status}`);
       }
-      setRecipes(rs => rs.filter(r => r.id !== id));
+      if (!res.ok) throw new Error(data.message || 'Delete failed');
+      setRecipes((rs) => rs.filter((r) => r.id !== id));
     } catch (err) {
       setError(err.message);
     }
@@ -59,9 +72,8 @@ export default function ViewRecipesPage() {
     );
   }
 
-  const filtered = category === 'All'
-    ? recipes
-    : recipes.filter(r => r.category === category);
+  const filtered =
+    category === 'All' ? recipes : recipes.filter((r) => r.category === category);
 
   return (
     <div className="w-screen min-h-screen bg-navy flex justify-center px-4 py-8">
@@ -69,7 +81,10 @@ export default function ViewRecipesPage() {
         {/* Header & logout */}
         <h1
           className="text-pastelYellow text-3xl font-bold text-center mb-6 cursor-pointer"
-          onClick={() => { logout(); navigate('/'); }}
+          onClick={() => {
+            logout();
+            navigate('/');
+          }}
         >
           Savoré
         </h1>
@@ -79,18 +94,20 @@ export default function ViewRecipesPage() {
           <label className="block mb-2 text-pastelYellow">Category</label>
           <select
             value={category}
-            onChange={e => setCategory(e.target.value)}
+            onChange={(e) => setCategory(e.target.value)}
             className="w-full p-2 bg-pastelAccent text-navy rounded border border-pastelPink focus:outline-none"
           >
-            {CATEGORIES.map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
+            {CATEGORIES.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
             ))}
           </select>
         </div>
 
         {/* Recipe list */}
         <div className="space-y-4 px-4">
-          {filtered.map(r => (
+          {filtered.map((r) => (
             <div
               key={r.id}
               className="bg-navy border border-pastelPink rounded-lg p-4 flex items-center justify-between hover:bg-opacity-90 transition"
@@ -102,15 +119,14 @@ export default function ViewRecipesPage() {
               >
                 {r.image_path && (
                   <img
-                    src={`${import.meta.env.VITE_API_URL?.replace('/api','') || 'http://localhost:3001'}${r.image_path}`}
+                    src={`${API_BASE}${r.image_path}`}
                     alt={r.title}
                     className="w-16 h-16 object-cover rounded mr-4"
                   />
                 )}
+
                 <div>
-                  <h3 className="text-2xl font-semibold text-pastelYellow">
-                    {r.title}
-                  </h3>
+                  <h3 className="text-2xl font-semibold text-pastelYellow">{r.title}</h3>
                   <p className="text-sm text-pastelPink/80">
                     {r.duration || '-'} • {r.calories ? `${r.calories} kcal` : '-'}
                   </p>
@@ -120,7 +136,7 @@ export default function ViewRecipesPage() {
               {/* Action buttons */}
               <div className="flex flex-col space-y-2 ml-4">
                 <button
-                  onClick={e => {
+                  onClick={(e) => {
                     e.stopPropagation();
                     navigate(`/recipes/${r.id}/edit`);
                   }}
@@ -129,7 +145,7 @@ export default function ViewRecipesPage() {
                   Edit
                 </button>
                 <button
-                  onClick={e => handleDelete(e, r.id)}
+                  onClick={(e) => handleDelete(e, r.id)}
                   className="text-sm bg-transparent border border-pastelPink text-pastelPink px-3 py-1 rounded hover:bg-red-600 hover:text-white transition"
                 >
                   Delete
