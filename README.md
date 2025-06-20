@@ -14,6 +14,9 @@
 - [Environment Variables](#environment-variables)  
 - [Development](#development)  
 - [Production Build & Deployment](#production-build--deployment)  
+  - [Vercel](#vercel)  
+  - [Render.com](#rendercom)  
+  - [Fly.io (Optional)](#flyio-optional)  
 - [Contributing](#contributing)  
 - [License](#license)  
 
@@ -21,9 +24,11 @@
 
 ## Features
 
+Savoré offers a clean, intuitive interface to manage recipes:
+
 - **User Authentication**: Sign up & log in with JWT-protected routes  
-- **Recipe Management**: Create, view, edit, and delete recipes (with photos)  
-- **Dynamic Forms**: “+ add” inputs for multiple ingredients and steps  
+- **Recipe CRUD**: Create, view, edit, and delete recipes (with photos)  
+- **Dynamic Forms**: “+ add” inputs for ingredients and steps  
 - **Offline-First**: Installable PWA with service-worker caching  
 - **Filtering**: Browse recipes by category  
 - **Responsive UI**: Mobile-optimized design with Tailwind CSS  
@@ -32,64 +37,53 @@
 
 ## Tech Stack
 
-- **Frontend**  
-  - React (Hooks, Context API, React Router v6)  
-  - Vite + Tailwind CSS + `vite-plugin-pwa`  
-- **Backend**  
-  - Node.js + Express (ES modules)  
-  - SQLite (`sqlite3`)  
-  - JWT authentication (`jsonwebtoken`)  
-  - File uploads with Multer  
-- **Deployment**  
-  - Frontend → Vercel  
-  - Backend → Render.com  
+- **Frontend**: React, Vite, Tailwind CSS, vite-plugin-pwa  
+- **Backend**: Node.js, Express (ESM), SQLite, JWT, Multer  
+- **Deployment**: Vercel (frontend), Render.com (backend), Fly.io (optional full-stack)
 
 ---
 
 ## Prerequisites
 
-- **Node.js** v16 or higher  
-- **npm** (comes with Node.js)  
-- **Git**  
+- Node.js v16+ & npm  
+- Git  
+- (Optional) Fly.io CLI (`brew install flyctl` or see https://fly.io/docs/hands-on/install-flyctl/)  
 
 ---
 
 ## Getting Started
 
-1. **Clone the repository**  
+1. **Clone the repo**  
    ```bash
    git clone https://github.com/<your-username>/recipe-app.git
    cd recipe-app
    ```
 
-2. **Configure environment variables**
-
-   - **Server**: create `server/.env` with:
+2. **Configure environment variables**  
+   - **Server** (`server/.env`):
      ```ini
      JWT_SECRET=your_jwt_secret
      CORS_ORIGIN=http://localhost:5173
      ```
-   - **Client**: create `client/.env` with:
+   - **Client** (`client/.env`):
      ```ini
      VITE_API_URL=http://localhost:3001/api
      ```
 
-3. **Install dependencies and start dev servers**  
-   Each part runs independently:
+3. **Install dependencies & start local servers**  
    ```bash
-   # In one terminal:
+   # Backend
    cd server
    npm install
-   npm run dev          # starts Express on http://localhost:3001
+   npm run dev   # http://localhost:3001
 
-   # In another terminal:
+   # Frontend (in new terminal)
    cd client
    npm install
-   npm run dev          # starts Vite on http://localhost:5173
+   npm run dev   # http://localhost:5173
    ```
 
-4. **Open in browser**  
-   Visit `http://localhost:5173` to use the app.
+4. **Open** `http://localhost:5173` in your browser
 
 ---
 
@@ -97,103 +91,109 @@
 
 ```
 recipe-app/
-├── client/           # React + Vite frontend
-│   ├── public/       # static assets
-│   ├── src/          # React components & pages
-│   ├── package.json
-│   ├── tailwind.config.js
-│   └── postcss.config.js
-└── server/           # Express + SQLite backend
-    ├── controllers/  # request handlers
-    ├── db/           # SQLite setup
-    ├── routes/       # auth & recipe routes
-    ├── uploads/      # stored images
-    ├── server.js     # main Express app
-    └── package.json
+├── client/        # Frontend (React + Vite)
+│   ├── public/
+│   ├── src/
+│   └── ...
+└── server/        # Backend (Express + SQLite)
+    ├── controllers/
+    ├── db/
+    ├── routes/
+    ├── uploads/
+    └── ...
 ```
 
 ---
 
 ## Environment Variables
 
-| Name           | Location      | Description                                      |
-| -------------- | ------------- | ------------------------------------------------ |
-| `JWT_SECRET`   | `server/.env` | Secret for signing JSON Web Tokens               |
-| `CORS_ORIGIN`  | `server/.env` | Allowed origin for CORS (e.g. your frontend URL) |
-| `VITE_API_URL` | `client/.env` | Base URL of your backend API (e.g. `…/api`)      |
+- `JWT_SECRET` (server/.env): Secret key for JWT  
+- `CORS_ORIGIN` (server/.env): Allowed origin for CORS  
+- `VITE_API_URL` (client/.env): Backend API base URL  
 
 ---
 
 ## Development
 
-### Backend
-
 ```bash
-cd server
-npm install
-npm run dev       # nodemon watches for changes
+# Backend
+cd server && npm install && npm run dev
+
+# Frontend
+cd client && npm install && npm run dev
 ```
-
-- Server runs on **http://localhost:3001**
-- API endpoints under `/api/auth` and `/api/recipes`
-
-### Frontend
-
-```bash
-cd client
-npm install
-npm run dev       # Vite dev server
-```
-
-- App runs on **http://localhost:5173**
-- Automatically reloads on code changes
 
 ---
 
 ## Production Build & Deployment
 
-### Frontend → Vercel
+### Vercel
 
-1. In the Vercel dashboard, **Import Git Repository** and point to the `client/` folder as **Root Directory**.  
-2. Set **Build Command**:
-   ```
-   npm ci && npm run build
-   ```
-3. Set **Output Directory**:
-   ```
-   dist
-   ```
-4. Add Environment Variable in Vercel:
-   ```
-   VITE_API_URL=https://<your-render-app>.onrender.com/api
-   ```
-5. Deploy and note your Vercel URL (e.g. `https://your-recipe-app.vercel.app`).
+1. Import the **client/** directory in Vercel  
+2. Build: `npm ci && npm run build`  
+3. Output: `dist`  
+4. Set `VITE_API_URL` to your backend URL  
 
-### Backend → Render.com
+### Render.com
 
-1. In the Render dashboard, **New Web Service**, connect your `server/` repo.  
-2. Set **Root Directory** to `server`.  
-3. **Build Command**: `npm ci`  
-4. **Start Command**: `npm start`  
-5. Add Environment Variables in Render:
-   ```ini
-   JWT_SECRET=your_jwt_secret
-   CORS_ORIGIN=https://<your-vercel-app>.vercel.app
+1. Create a Web Service pointing to **server/**  
+2. Build: `npm ci`  
+3. Start: `npm start`  
+4. Add `JWT_SECRET` and `CORS_ORIGIN` env vars  
+
+### Fly.io (Optional)
+
+Fly.io can host both client and server together.
+
+1. **Install** `flyctl` and **login**:  
+   ```bash
+   flyctl auth signup
    ```
-6. Deploy and note your Render URL (e.g. `https://recipe-server-xyz.onrender.com`).
+
+2. **Initialize** in project root:  
+   ```bash
+   flyctl launch \
+     --name savore-app \
+     --dockerfile server/Dockerfile \
+     --region iad \
+     --no-deploy
+   ```
+
+3. **Edit** `fly.toml` to include frontend build:  
+   ```toml
+   [[services]]
+     internal_port = 3001
+     protocol = "tcp"
+
+   [build]
+     dockerfile = "server/Dockerfile"
+     [build.args]
+       CLIENT_BUILD_DIR = "../client/dist"
+   ```
+
+4. **Configure** environment on Fly.io:  
+   ```bash
+   flyctl secrets set JWT_SECRET=your_jwt_secret \
+     CORS_ORIGIN="https://savore-app.fly.dev"
+   ```
+
+5. **Deploy** both:  
+   ```bash
+   flyctl deploy
+   ```
+
+6. App is live at `https://savore-app.fly.dev`
 
 ---
 
 ## Contributing
 
-1. Fork this repository  
-2. Create a branch: `git checkout -b feat/some-feature`  
-3. Commit your changes: `git commit -m "feat: add some feature"`  
-4. Push to your fork: `git push origin feat/some-feature`  
-5. Open a Pull Request  
+1. Fork & clone the repo  
+2. Create a branch: `git checkout -b feat/awesome`  
+3. Commit & push, then open a Pull Request  
 
 ---
 
 ## License
 
-This project is licensed under the MIT License.
+MIT License  
